@@ -1,4 +1,4 @@
-#include "driver_uart.h"  
+﻿#include "driver_uart.h"  
 #include "FreeRTOS.h"     
 #include "task.h"         
 #include <string.h>       // 用于 strlen
@@ -215,25 +215,21 @@ static void SimplePWM(GPIO_TypeDef* port, uint16_t pin,
 
 /**
  * @brief DRV8803 测试任务
- *   - 初始化芯片配置
- *   - 依次使能两个芯片，循环点亮每个通道
- *   - 控制对应的 PWM 线产生呼吸效果
+ *   - 初始化所有端口
+ *   - 使能芯片并控制12VO1输出
  *   - 故障监测与处理
  */
 void StartDrv8803TestTask(void *argument)
 {
-     PrintDebug("--- 真空泵测试 (IN4/PE11) ---\r\n");
+     PrintDebug("--- 真空泵测试 (12VO1/PE11) ---\r\n");
 
-    DRV8803_Dual_Config();
+    DRV8803_Init();
 
     DRV8803_EnableChip(1, true);
     DRV8803_EnableChip(2, false);
 
-    DRV8803_SetChipChannels(1, 0x00);
-    DRV8803_SetChipChannels(2, 0x00);
-
-    DRV8803_SetGlobalChannel(CH4, true);
-    PrintDebug("IN4 (PE11) 真空泵已开启.\r\n");
+    DRV8803_SetOutput(&Port_12VO1, true);
+    PrintDebug("12VO1 (PE11) 真空泵已开启.\r\n");
 
     const TickType_t faultCheckPeriod = pdMS_TO_TICKS(100);
     for (;;)
@@ -243,8 +239,8 @@ void StartDrv8803TestTask(void *argument)
             PrintDebug("[FAULT] U12 fault! Attempt recovery...\r\n");
             DRV8803_HandleFault_RTOS(1);
             DRV8803_EnableChip(1, true);
-            DRV8803_SetGlobalChannel(CH4, true);
-            PrintDebug("U12 re-enabled, CH4 vacuum pump restored.\r\n");
+            DRV8803_SetOutput(&Port_12VO1, true);
+            PrintDebug("U12 re-enabled, 12VO1 vacuum pump restored.\r\n");
         }
         vTaskDelay(faultCheckPeriod);
     }
